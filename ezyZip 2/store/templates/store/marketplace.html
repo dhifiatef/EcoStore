@@ -1,0 +1,193 @@
+{% extends 'store/base.html' %}
+{% load store_tags %}
+
+{% block title %}Marketplace{% endblock %}
+{% block page_title %}Marketplace{% endblock %}
+{% block page_subtitle %}Discover products from {{ products|length }} listings{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<form method="get" class="flex flex-wrap gap-3 mb-6">
+  <div class="relative flex-1 min-w-48">
+    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    <input type="text" name="search" value="{{ search }}" placeholder="Search products or stores..." class="form-input pl-9">
+  </div>
+  <select name="category" class="form-input w-auto">
+    <option value="">All categories</option>
+    {% for val, label in categories %}
+    <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="sort" class="form-input w-auto">
+    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+    <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low → High</option>
+    <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: High → Low</option>
+    <option value="name" {% if sort == 'name' %}selected{% endif %}>Name A-Z</option>
+  </select>
+  <button type="submit" class="btn-secondary">Apply</button>
+  {% if search or selected_category %}
+  <a href="{% url 'marketplace' %}" class="btn-secondary">Clear</a>
+  {% endif %}
+</form>
+
+{% if products %}
+<!-- Product grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+     x-data="{
+       cart: JSON.parse(localStorage.getItem('eco_cart') || '[]'),
+       contactModal: null,
+       contactMsg: '',
+       get cartCount() { return this.cart.reduce((s,i) => s+i.qty, 0); },
+       addToCart(id, name, price) {
+         const existing = this.cart.find(i => i.id === id);
+         if(existing) existing.qty++;
+         else this.cart.push({id, name, price, qty: 1});
+         localStorage.setItem('eco_cart', JSON.stringify(this.cart));
+       },
+       removeFromCart(id) {
+         this.cart = this.cart.filter(i => i.id !== id);
+         localStorage.setItem('eco_cart', JSON.stringify(this.cart));
+       },
+       isInCart(id) { return this.cart.some(i => i.id === id); },
+       cartTotal() { return this.cart.reduce((s,i) => s + i.price*i.qty, 0).toFixed(2); }
+     }">
+
+  {% for product in products %}
+  <div class="card overflow-hidden flex flex-col group hover:border-zinc-700 transition-all duration-200 hover:-translate-y-0.5"
+       style="animation: fadeIn .3s ease {{ forloop.counter0|add:0 }}ms both">
+    <!-- Image -->
+    <div class="relative aspect-video bg-zinc-900 overflow-hidden">
+      {% if product.image_url %}
+      <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+      {% else %}
+      <div class="w-full h-full flex items-center justify-center">
+        <svg class="w-10 h-10 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+      {% endif %}
+      <div class="absolute top-2 left-2">
+        <span class="badge text-zinc-300 bg-zinc-900/80 border-zinc-700 backdrop-blur-sm text-xs">{{ product.get_category_display }}</span>
+      </div>
+      {% if product.stock == 0 %}
+      <div class="absolute inset-0 bg-zinc-950/60 flex items-center justify-center">
+        <span class="badge text-red-400 bg-red-500/20 border-red-500/30">Out of Stock</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div class="p-4 flex-1 flex flex-col">
+      <p class="text-xs text-zinc-500 mb-1">
+        <a href="{% url 'conversation' product.store.pk %}" class="hover:text-emerald-400 transition-colors">
+          {{ product.store.name }}
+        </a>
+      </p>
+      <h3 class="font-semibold text-white text-sm mb-1 leading-tight">{{ product.name }}</h3>
+      <p class="text-lg font-bold text-emerald-400 mb-3">{{ product.price|currency }}</p>
+
+      <div class="mt-auto space-y-2">
+        <!-- Add to cart -->
+        <button @click="addToCart({{ product.pk }}, '{{ product.name|escapejs }}', {{ product.price }})"
+                x-show="!isInCart({{ product.pk }})"
+                {% if product.stock == 0 %}disabled{% endif %}
+                class="w-full py-2 text-sm font-semibold rounded-lg transition-all
+                       {% if product.stock == 0 %}bg-zinc-800 text-zinc-600 cursor-not-allowed{% else %}bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25{% endif %}">
+          {% if product.stock == 0 %}Out of Stock{% else %}Add to Cart{% endif %}
+        </button>
+        <button @click="removeFromCart({{ product.pk }})"
+                x-show="isInCart({{ product.pk }})"
+                class="w-full py-2 text-sm font-semibold rounded-lg bg-emerald-500 text-black hover:bg-emerald-400 transition-all">
+          ✓ In Cart
+        </button>
+
+        <!-- Contact store -->
+        <button @click="contactModal = { storeId: {{ product.store.pk }}, storeName: '{{ product.store.name|escapejs }}', productId: {{ product.pk }}, productName: '{{ product.name|escapejs }}' }"
+                class="w-full py-1.5 text-xs font-medium rounded-lg text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-all">
+          Message Store
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Floating Cart -->
+  <div x-show="cartCount > 0" x-transition
+       class="fixed bottom-6 right-6 z-50"
+       x-data="{ open: false }">
+    <button @click="open = !open"
+            class="w-14 h-14 rounded-2xl bg-emerald-500 text-black flex items-center justify-center shadow-2xl hover:bg-emerald-400 transition-all relative">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-900 border border-emerald-500 text-emerald-400 text-xs flex items-center justify-center font-bold" x-text="cartCount"></span>
+    </button>
+
+    <!-- Cart drawer -->
+    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         @click.outside="open = false"
+         class="absolute bottom-16 right-0 w-80 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-4">
+      <h3 class="font-semibold text-white mb-3">Cart (<span x-text="cartCount"></span> items)</h3>
+      <div class="space-y-2 max-h-48 overflow-y-auto">
+        <template x-for="item in cart" :key="item.id">
+          <div class="flex items-center justify-between py-2 border-b border-zinc-800">
+            <div>
+              <p class="text-sm text-white" x-text="item.name"></p>
+              <p class="text-xs text-zinc-500">Qty: <span x-text="item.qty"></span> · $<span x-text="(item.price*item.qty).toFixed(2)"></span></p>
+            </div>
+            <button @click="removeFromCart(item.id)" class="text-red-400 hover:text-red-300 text-xs">Remove</button>
+          </div>
+        </template>
+      </div>
+      <div class="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between">
+        <span class="text-zinc-400 text-sm">Total</span>
+        <span class="text-emerald-400 font-bold">$<span x-text="cartTotal()"></span></span>
+      </div>
+      <button class="mt-3 w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg text-sm transition-all">
+        Checkout (Demo)
+      </button>
+    </div>
+  </div>
+
+  <!-- Contact Store Modal -->
+  <div x-show="contactModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
+    <div @click.outside="contactModal = null; contactMsg = ''"
+         class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-semibold text-white">Message Store</h3>
+          <p class="text-sm text-zinc-500" x-text="contactModal && contactModal.storeName"></p>
+        </div>
+        <button @click="contactModal = null; contactMsg = ''" class="text-zinc-600 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <template x-if="contactModal">
+        <form :action="'/messages/' + contactModal.storeId + '/contact/'" method="post">
+          <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+          <input type="hidden" name="product_id" :value="contactModal.productId">
+          <div class="mb-3 p-3 bg-zinc-800 rounded-lg flex items-center gap-2">
+            <svg class="w-4 h-4 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <span class="text-sm text-zinc-300" x-text="contactModal.productName"></span>
+          </div>
+          <textarea name="content" x-model="contactMsg" class="form-input" rows="4"
+                    placeholder="Hi! I'm interested in this product. Can you tell me more?" required></textarea>
+          <div class="flex gap-2 mt-3">
+            <button type="submit" class="btn-primary flex-1 justify-center">Send Message</button>
+            <button type="button" @click="contactModal = null; contactMsg = ''" class="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </template>
+    </div>
+  </div>
+
+</div>
+{% else %}
+<div class="card p-16 text-center">
+  <div class="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto mb-4">
+    <svg class="w-7 h-7 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+  </div>
+  <h3 class="text-lg font-semibold text-white mb-2">No products found</h3>
+  <p class="text-zinc-500">{% if search %}Try a different search term.{% else %}The marketplace is empty — be the first to list a product!{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}

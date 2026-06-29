@@ -1,0 +1,62 @@
+{% extends 'store/base.html' %}
+{% load store_tags %}
+
+{% block title %}Settings{% endblock %}
+{% block page_title %}Store Settings{% endblock %}
+{% block page_subtitle %}Manage your store profile{% endblock %}
+
+{% block content %}
+<div class="max-w-xl space-y-5">
+
+  <!-- Store profile form -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-white mb-5">Store Profile</h3>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="form-label">Store Name</label>
+        <input type="text" name="name" class="form-input" value="{{ form.name.value|default:store.name }}" required>
+        {% if form.name.errors %}<p class="text-red-400 text-xs mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-input" rows="4" placeholder="Describe your store...">{{ form.description.value|default:store.description }}</textarea>
+      </div>
+      <button type="submit" class="btn-primary">Save Changes</button>
+    </form>
+  </div>
+
+  <!-- Account info (read-only) -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-white mb-4">Account Information</h3>
+    <div class="space-y-3 text-sm">
+      <div class="flex justify-between py-2 border-b border-zinc-800">
+        <span class="text-zinc-500">Username</span>
+        <span class="text-white font-mono">{{ user.username }}</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-zinc-800">
+        <span class="text-zinc-500">Email</span>
+        <span class="text-white">{{ user.email|default:"—" }}</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-zinc-800">
+        <span class="text-zinc-500">Member since</span>
+        <span class="text-white">{{ user.date_joined|date:"M Y" }}</span>
+      </div>
+      <div class="flex justify-between py-2">
+        <span class="text-zinc-500">Store created</span>
+        <span class="text-white">{{ store.created_at|date:"M d, Y" }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="card p-6 border-red-500/20">
+    <h3 class="font-semibold text-red-400 mb-2">Danger Zone</h3>
+    <p class="text-sm text-zinc-500 mb-4">These actions are irreversible. Be careful.</p>
+    <a href="{% url 'admin:index' %}" target="_blank" class="btn-danger text-xs">
+      Open Django Admin →
+    </a>
+  </div>
+
+</div>
+{% endblock %}

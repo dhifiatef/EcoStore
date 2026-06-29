@@ -1,0 +1,109 @@
+{% load store_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In — EcoStore</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { background: #09090b; font-family: 'Space Grotesk', sans-serif; }
+    .form-input { display:block; width:100%; background:#18181b; border:1px solid #3f3f46; border-radius:8px; padding:10px 14px; font-size:14px; color:#fff; outline:none; transition:all .15s; }
+    .form-input:focus { border-color:#10b981; box-shadow:0 0 0 2px rgba(16,185,129,.15); }
+    .form-input::placeholder { color:#71717a; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp .5s ease forwards; }
+  </style>
+</head>
+<body class="min-h-screen flex">
+  <!-- Left panel - decorative -->
+  <div class="hidden lg:flex w-1/2 bg-zinc-950 border-r border-zinc-800 flex-col justify-between p-12 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent"></div>
+    <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"></div>
+    <!-- Logo -->
+    <div class="flex items-center gap-3 relative z-10">
+      <div class="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center">
+        <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <span class="text-xl font-bold text-white tracking-tight">EcoStore</span>
+    </div>
+    <!-- Tagline -->
+    <div class="relative z-10">
+      <h2 class="text-4xl font-bold text-white leading-tight mb-4">
+        Your marketplace,<br/><span class="text-emerald-400">supercharged.</span>
+      </h2>
+      <p class="text-zinc-400 text-lg">Manage products, connect with stores, and grow your business — all in one platform.</p>
+      <div class="mt-10 grid grid-cols-3 gap-6">
+        {% for label, value in forloop.parentloop.counter|default:"" %}{% endfor %}
+        <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
+          <p class="text-2xl font-bold text-emerald-400">2.4k+</p>
+          <p class="text-xs text-zinc-500 mt-1">Active Stores</p>
+        </div>
+        <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
+          <p class="text-2xl font-bold text-emerald-400">18k+</p>
+          <p class="text-xs text-zinc-500 mt-1">Products Listed</p>
+        </div>
+        <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
+          <p class="text-2xl font-bold text-emerald-400">$4.2M</p>
+          <p class="text-xs text-zinc-500 mt-1">Monthly GMV</p>
+        </div>
+      </div>
+    </div>
+    <p class="text-xs text-zinc-700 relative z-10">© 2025 EcoStore Platform</p>
+  </div>
+
+  <!-- Right panel - form -->
+  <div class="flex-1 flex items-center justify-center p-8">
+    <div class="w-full max-w-md fade-up">
+      <div class="lg:hidden flex items-center gap-2 mb-8">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
+          <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <span class="font-bold text-white">EcoStore</span>
+      </div>
+
+      <h1 class="text-2xl font-bold text-white mb-1">Welcome back</h1>
+      <p class="text-zinc-400 text-sm mb-8">Sign in to your store dashboard</p>
+
+      {% if form.errors %}
+      <div class="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+        Invalid username or password. Please try again.
+      </div>
+      {% endif %}
+
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Username</label>
+          <input type="text" name="username" class="form-input" placeholder="your_username" autofocus required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Password</label>
+          <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg text-sm transition-all duration-150 mt-2">
+          Sign In →
+        </button>
+      </form>
+
+      <p class="text-center text-sm text-zinc-500 mt-6">
+        Don't have an account?
+        <a href="{% url 'register' %}" class="text-emerald-400 hover:text-emerald-300 font-medium">Create store</a>
+      </p>
+
+      <div class="mt-8 p-4 bg-zinc-900 rounded-xl border border-zinc-800">
+        <p class="text-xs text-zinc-500 font-medium mb-2">Demo credentials</p>
+        <div class="space-y-1 font-mono text-xs text-zinc-400">
+          <p>alice / demo1234 &nbsp;·&nbsp; Tech Emporium</p>
+          <p>bob / demo1234 &nbsp;·&nbsp; Lifestyle Co.</p>
+          <p>carol / demo1234 &nbsp;·&nbsp; Wellness Hub</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

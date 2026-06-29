@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Store — EcoStore</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { background:#09090b; font-family:'Space Grotesk',sans-serif; }
+    .form-input { display:block; width:100%; background:#18181b; border:1px solid #3f3f46; border-radius:8px; padding:10px 14px; font-size:14px; color:#fff; outline:none; transition:all .15s; }
+    .form-input:focus { border-color:#10b981; box-shadow:0 0 0 2px rgba(16,185,129,.15); }
+    .form-input::placeholder { color:#71717a; }
+    .error-text { color:#f87171; font-size:12px; margin-top:4px; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation:fadeUp .5s ease forwards; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <div class="w-full max-w-lg fade-up">
+    <div class="flex items-center gap-2 mb-8">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
+        <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <span class="font-bold text-white text-lg">EcoStore</span>
+    </div>
+
+    <h1 class="text-2xl font-bold text-white mb-1">Create your store</h1>
+    <p class="text-zinc-400 text-sm mb-8">Get started in seconds. No credit card required.</p>
+
+    <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Username</label>
+            <input type="text" name="username" class="form-input" placeholder="your_username" value="{{ form.username.value|default:'' }}" required>
+            {% if form.username.errors %}<p class="error-text">{{ form.username.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Email</label>
+            <input type="email" name="email" class="form-input" placeholder="you@example.com" value="{{ form.email.value|default:'' }}" required>
+            {% if form.email.errors %}<p class="error-text">{{ form.email.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Store Name</label>
+          <input type="text" name="store_name" class="form-input" placeholder="My Awesome Store" value="{{ form.store_name.value|default:'' }}" required>
+          {% if form.store_name.errors %}<p class="error-text">{{ form.store_name.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Store Description <span class="text-zinc-600 normal-case">(optional)</span></label>
+          <textarea name="store_description" class="form-input" rows="2" placeholder="What do you sell?">{{ form.store_description.value|default:'' }}</textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Password</label>
+            <input type="password" name="password1" class="form-input" placeholder="Min 8 characters" required>
+            {% if form.password1.errors %}<p class="error-text">{{ form.password1.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Confirm</label>
+            <input type="password" name="password2" class="form-input" placeholder="Repeat password" required>
+            {% if form.password2.errors %}<p class="error-text">{{ form.password2.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+          {{ form.non_field_errors.0 }}
+        </div>
+        {% endif %}
+
+        <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg text-sm transition-all duration-150">
+          Launch my store →
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center text-sm text-zinc-500 mt-4">
+      Already have an account?
+      <a href="{% url 'login' %}" class="text-emerald-400 hover:text-emerald-300 font-medium">Sign in</a>
+    </p>
+  </div>
+</body>
+</html>

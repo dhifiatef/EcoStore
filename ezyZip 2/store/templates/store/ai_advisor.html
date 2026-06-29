@@ -1,0 +1,196 @@
+{% extends 'store/base.html' %}
+{% load store_tags %}
+
+{% block title %}AI Advisor{% endblock %}
+{% block page_title %}AI Business Advisor{% endblock %}
+{% block page_subtitle %}Powered by Gemini · Analyzes your store & the marketplace{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-3 gap-5 h-full" style="min-height: calc(100vh - 200px);">
+
+  <!-- Context panel -->
+  <div class="space-y-4">
+    <!-- My store stats -->
+    <div class="card p-4">
+      <h3 class="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Your Store Context</h3>
+      <div class="space-y-2">
+        <div class="flex justify-between text-sm">
+          <span class="text-zinc-400">Store</span>
+          <span class="text-white font-medium">{{ store.name }}</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-zinc-400">Products</span>
+          <span class="text-white font-medium">{{ my_products|length }}</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-zinc-400">Market items</span>
+          <span class="text-white font-medium">{{ market_products|length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompt suggestions -->
+    <div class="card p-4">
+      <h3 class="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Quick Prompts</h3>
+      <div class="space-y-2" id="suggestions">
+        {% for prompt in "What pricing strategy should I use for my products?|Analyze market gaps I should fill|Which of my products have the best margins?|What categories are underserved in the marketplace?|How can I increase my store's revenue?|Suggest a marketing strategy for my store" %}
+        {% with parts=prompt|split:"," %}
+        {% endwith %}
+        {% endfor %}
+        <button onclick="usePrompt(this)" data-prompt="What pricing strategy should I use for my products?"
+                class="w-full text-left px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 border border-zinc-700 hover:border-zinc-600 transition-all">
+          💰 Pricing strategy advice
+        </button>
+        <button onclick="usePrompt(this)" data-prompt="Analyze the market gaps I should fill based on the marketplace."
+                class="w-full text-left px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 border border-zinc-700 hover:border-zinc-600 transition-all">
+          📊 Identify market gaps
+        </button>
+        <button onclick="usePrompt(this)" data-prompt="Which categories in the marketplace are the most competitive?"
+                class="w-full text-left px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 border border-zinc-700 hover:border-zinc-600 transition-all">
+          🎯 Competitive analysis
+        </button>
+        <button onclick="usePrompt(this)" data-prompt="Give me 5 specific action items to grow my store's revenue this month."
+                class="w-full text-left px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 border border-zinc-700 hover:border-zinc-600 transition-all">
+          🚀 Revenue growth plan
+        </button>
+        <button onclick="usePrompt(this)" data-prompt="Which of my products should I restock first and why?"
+                class="w-full text-left px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 border border-zinc-700 hover:border-zinc-600 transition-all">
+          📦 Inventory advice
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat interface -->
+  <div class="col-span-2 card flex flex-col overflow-hidden">
+    <!-- Chat header -->
+    <div class="px-5 py-4 border-b border-zinc-800 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v3"/></svg>
+      </div>
+      <div>
+        <p class="font-semibold text-white text-sm">EcoStore AI Advisor</p>
+        <div class="flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+          <span class="text-xs text-zinc-500">Gemini 1.5 Flash · Market-aware</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages area -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-4" id="chat-messages">
+      <!-- Welcome message -->
+      <div class="flex gap-3">
+        <div class="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v3"/></svg>
+        </div>
+        <div class="flex-1 bg-zinc-800/60 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-zinc-300 leading-relaxed">
+          <p>Hi! I'm your AI business advisor, powered by Gemini. I have full context about <strong class="text-white">{{ store.name }}</strong> — your {{ my_products|length }} products, sales data, and the {{ market_products|length }} products currently listed in the marketplace.</p>
+          <p class="mt-2">Ask me anything: pricing, strategy, market gaps, inventory — I'm here to help you grow. 🚀</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="px-5 py-4 border-t border-zinc-800">
+      <div class="flex gap-3">
+        <textarea id="chat-input" class="form-input resize-none flex-1" rows="2"
+                  placeholder="Ask about pricing, market trends, your inventory..." 
+                  onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendMessage(); }"></textarea>
+        <button onclick="sendMessage()" id="send-btn"
+                class="btn-primary px-5 flex-shrink-0 self-end">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          Ask
+        </button>
+      </div>
+      <p class="text-xs text-zinc-600 mt-2">Enter to send · Shift+Enter for new line</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function usePrompt(btn) {
+  document.getElementById('chat-input').value = btn.dataset.prompt;
+  document.getElementById('chat-input').focus();
+}
+
+function addMessage(role, content) {
+  const container = document.getElementById('chat-messages');
+  const isUser = role === 'user';
+  const html = isUser
+    ? `<div class="flex justify-end">
+         <div class="max-w-sm bg-emerald-500/15 border border-emerald-500/20 rounded-2xl rounded-tr-sm px-4 py-3 text-sm text-emerald-100">${escapeHtml(content)}</div>
+       </div>`
+    : `<div class="flex gap-3">
+         <div class="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+           <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v3"/></svg>
+         </div>
+         <div class="flex-1 bg-zinc-800/60 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-zinc-300 leading-relaxed ai-msg">${formatMarkdown(content)}</div>
+       </div>`;
+  container.insertAdjacentHTML('beforeend', html);
+  container.scrollTop = container.scrollHeight;
+}
+
+function addTyping() {
+  const container = document.getElementById('chat-messages');
+  const html = `<div class="flex gap-3" id="typing-indicator">
+    <div class="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+      <svg class="w-3.5 h-3.5 text-emerald-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    </div>
+    <div class="bg-zinc-800/60 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-zinc-500">
+      <span class="inline-flex gap-1"><span class="pulse-dot">●</span><span class="pulse-dot" style="animation-delay:.2s">●</span><span class="pulse-dot" style="animation-delay:.4s">●</span></span>
+    </div>
+  </div>`;
+  container.insertAdjacentHTML('beforeend', html);
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function formatMarkdown(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^•\s/gm, '<span class="text-emerald-400">•</span> ')
+    .replace(/^-\s/gm, '<span class="text-emerald-400">•</span> ')
+    .replace(/\n/g, '<br>');
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const btn = document.getElementById('send-btn');
+  const message = input.value.trim();
+  if (!message) return;
+
+  addMessage('user', message);
+  input.value = '';
+  btn.disabled = true;
+  btn.textContent = '...';
+  addTyping();
+
+  try {
+    const res = await fetch('{% url "ai_chat" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify({ message })
+    });
+    const data = await res.json();
+    document.getElementById('typing-indicator')?.remove();
+    addMessage('ai', data.reply || data.error || 'Sorry, something went wrong.');
+  } catch(e) {
+    document.getElementById('typing-indicator')?.remove();
+    addMessage('ai', '⚠️ Network error. Please check your connection and try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Ask';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'store/base.html' %}
+{% load store_tags %}
+
+{% block title %}Order #{{ order.pk }}{% endblock %}
+{% block page_title %}Order #{{ order.pk|stringformat:"05d" }}{% endblock %}
+{% block page_subtitle %}{{ order.customer_name }} · {{ order.created_at|date:"M d, Y H:i" }}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'orders' %}" class="btn-secondary">← Back to Orders</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-5">
+  <!-- Info card -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-white mb-4">Order Information</h3>
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <p class="text-zinc-500 mb-1">Customer</p>
+        <p class="text-white font-medium">{{ order.customer_name }}</p>
+      </div>
+      <div>
+        <p class="text-zinc-500 mb-1">Email</p>
+        <p class="text-white">{{ order.customer_email }}</p>
+      </div>
+      <div>
+        <p class="text-zinc-500 mb-1">Total</p>
+        <p class="text-2xl font-bold text-emerald-400">{{ order.total|currency }}</p>
+      </div>
+      <div>
+        <p class="text-zinc-500 mb-1">Current Status</p>
+        <span class="badge {{ order.status|status_color }} text-sm">{{ order.get_status_display }}</span>
+      </div>
+      <div>
+        <p class="text-zinc-500 mb-1">Order Date</p>
+        <p class="text-white">{{ order.created_at|date:"M d, Y H:i" }}</p>
+      </div>
+    </div>
+    {% if order.notes %}
+    <div class="mt-4 pt-4 border-t border-zinc-800">
+      <p class="text-zinc-500 text-sm mb-1">Notes</p>
+      <p class="text-zinc-300 text-sm">{{ order.notes }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Update status -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-white mb-4">Update Status</h3>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="form-label">Status</label>
+        <select name="status" class="form-input">
+          {% for val, label in form.fields.status.choices %}
+          <option value="{{ val }}" {% if form.status.value == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-input" rows="3" placeholder="Add internal notes...">{{ form.notes.value|default:'' }}</textarea>
+      </div>
+      <button type="submit" class="btn-primary">Update Order</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

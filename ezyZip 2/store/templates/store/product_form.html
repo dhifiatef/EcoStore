@@ -1,0 +1,106 @@
+{% extends 'store/base.html' %}
+{% load store_tags %}
+
+{% block title %}{{ action }} Product{% endblock %}
+{% block page_title %}{{ action }} Product{% endblock %}
+{% block page_subtitle %}{% if product %}Editing: {{ product.name }}{% else %}Add a new product to your store{% endif %}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'products' %}" class="btn-secondary">← Back to Products</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+  <div class="card p-6">
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="form-label">Product Name</label>
+          <input type="text" name="name" class="form-input" placeholder="e.g. Wireless Earbuds Pro"
+                 value="{{ form.name.value|default:'' }}" required>
+          {% if form.name.errors %}<p class="text-red-400 text-xs mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="form-label">Price ($)</label>
+          <input type="number" name="price" step="0.01" min="0" class="form-input" placeholder="29.99"
+                 value="{{ form.price.value|default:'' }}" required>
+          {% if form.price.errors %}<p class="text-red-400 text-xs mt-1">{{ form.price.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="form-label">Stock Quantity</label>
+          <input type="number" name="stock" min="0" class="form-input" placeholder="100"
+                 value="{{ form.stock.value|default:'' }}" required>
+          {% if form.stock.errors %}<p class="text-red-400 text-xs mt-1">{{ form.stock.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="form-label">Category</label>
+          <select name="category" class="form-input">
+            {% for val, label in form.fields.category.choices %}
+            <option value="{{ val }}" {% if form.category.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">SKU</label>
+          <input type="text" name="sku" class="form-input font-mono" placeholder="PROD-001"
+                 value="{{ form.sku.value|default:'' }}" required>
+          {% if form.sku.errors %}<p class="text-red-400 text-xs mt-1">{{ form.sku.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="col-span-2">
+          <label class="form-label">Image URL <span class="text-zinc-600 normal-case font-normal">(optional)</span></label>
+          <input type="url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg"
+                 value="{{ form.image_url.value|default:'' }}">
+          {% if form.image_url.errors %}<p class="text-red-400 text-xs mt-1">{{ form.image_url.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="col-span-2">
+          <label class="form-label">Description <span class="text-zinc-600 normal-case font-normal">(optional)</span></label>
+          <textarea name="description" class="form-input" rows="3" placeholder="Describe your product...">{{ form.description.value|default:'' }}</textarea>
+        </div>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+        {{ form.non_field_errors.0 }}
+      </div>
+      {% endif %}
+
+      <!-- Image preview -->
+      <div x-data="{ url: '{{ form.image_url.value|default:'' }}' }"
+           x-show="url" class="mt-2">
+        <p class="form-label">Preview</p>
+        <img :src="url" class="w-24 h-24 object-cover rounded-xl border border-zinc-700" @error="url=''">
+      </div>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit" class="btn-primary">
+          {{ action }} Product
+        </button>
+        <a href="{% url 'products' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live image preview
+const imgInput = document.querySelector('input[name="image_url"]');
+if (imgInput) {
+  imgInput.addEventListener('input', e => {
+    const alpineEl = imgInput.closest('[x-data]');
+    if (alpineEl && alpineEl._x_dataStack) {
+      alpineEl._x_dataStack[0].url = e.target.value;
+    }
+  });
+}
+</script>
+{% endblock %}
