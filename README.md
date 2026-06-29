@@ -1,4 +1,4 @@
-# 🛒 EzyZip - AI-Powered E-Commerce Platform
+ 🛍️ EcoStore - AI-Powered E-Commerce Platform
 
 EzyZip is a modern full-stack e-commerce web application built with **Django**. The platform allows users to browse products, manage orders, communicate with sellers, and receive AI-powered shopping recommendations using Google's Gemini API.
 
@@ -319,6 +319,3 @@ GitHub: https://github.com/yourusername
 
 ---
 
-# 📄 License
-
-This project is licensed under the MIT License.
